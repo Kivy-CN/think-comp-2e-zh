@@ -62,7 +62,7 @@ _增长级别_(order of growth)是一个函数集合，集合中函数的增长�
 下表列出了算法分析中最通常的一些增长级别，按照运行效率从高到低排列。
 
 | 增长级别 | 名称 |
-| --- | --- | --- |
+| --- | --- |
 | `O(1)` | 常数 |
 | `O(logn)` | 对数 |
 | `O(n)` | 线性 |
@@ -78,7 +78,7 @@ _增长级别_(order of growth)是一个函数集合，集合中函数的增长�
 访问 [http://en.wikipedia.org/wiki/Big_O_notation](http://en.wikipedia.org/wiki/Big_O_notation) ，阅读维基百科关于大O符号的介绍，并回答以下问题：
 
 1.  `n^3 + n^2`的增长级别是多少？`1000000 n^3 + n^2` 和 `n^3 + 1000000 n^2` 的增长级别又是多少？
-2.  `(n^2 + n) \cdot (n + 1)`的增长级别是多少？在开始计算之前，记住你只需要考虑首项即可。
+2.  `(n^2 + n) * (n + 1)`的增长级别是多少？在开始计算之前，记住你只需要考虑首项即可。
 3.  如果 `f` 的增长级别为 `O(g)` ，那么对于未指定的函数 `g` ，我们可以如何描述 `af+b` ？
 4.  如果 `f1` 和 `f2` 的增长级别为 `O(g)`，那么 `f1 + f2` 的增长级别又是多少？
 5.  如果 `f1` 的增长级别为 `O(g)` ，`f2` 的增长级别为 `O(h)`，那么 `f1 + f2` 的增长级别是多少？
@@ -293,3 +293,139 @@ class HashMap:
 
 你可以从 [http://thinkpython2.com/code/Map.py](http://thinkpython2.com/code/Map.py) 下载到 `HashMap` 的实现代码，你不必使用它；如果你想要一个映射数据结构，只要使用 Python 中的字典即可。
 
+练习 4
+
+我的`HashMap`实现直接访问`BetterMap`的属性，这表现了糟糕的面向对象设计。
+
++   特殊方法`__len__`由内置函数`len`调用。 为`BetterMap`编写一个`__len__`方法并在`add`中使用它。
++   使用生成器来编写`BetterMap.iteritems`，并在`resize`中使用它。
+
+练习 5
+
+散列表的一个缺点是元素必须是可散列的，这通常意味着它们必须是不可变的。 这就是为什么在 Python 中，可以将元组而不是列表用作字典中的键。 另一种方法是使用基于树的映射。
+
+编写一个名为`TreeMap`的映射接口的实现，它使用红黑树，以对数时间执行`add `和`log`。
+
+## A.5 列表的求和
+
+假设你有一堆列表，并且你想把它们合并成一个列表。 有三种方法可以在 Python 中执行此操作：
+
+你可以使用`+=`运算符：
+
+```py
+total = []
+for x in t:
+    total += x
+```
+
+或者`extend `方法：
+
+```py
+total = []
+for x in t:
+    total.extend(x)
+```
+
+或者内建的`sum`函数：
+
+```py
+total = sum(t, [])
+```
+
+`sum`的第二个参数是总数的初始值。
+
+在不知道如何实现`+=`和`extend `和`sum`的情况下，很难分析它们的性能。 例如，如果`total += x`每次创建一个新列表，则循环是二次的；但如果它修改了总数，它是线性的。
+
+为了找到答案，我们可以阅读源代码，但作为练习，让我们看看我们是否可以通过测量运行时间来弄清楚它。
+
+测量程序运行时间的简单方法，是使用`os`模块中的`time`函数，该函数返回浮点数的元组，表示进程已经过的时间（详细信息请参阅文档）。 我使用了函数`etime`，它返回“用户时间”和“系统时间”的总和，这通常是我们关心的性能度量：
+
+```py
+import os
+
+def etime():
+    """See how much user and system time this process has used
+    so far and return the sum."""
+
+    user, sys, chuser, chsys, real = os.times()
+    return user+sys
+```
+
+为了衡量一个函数的运行时间，你可以调用`etime`两次并计算差异：
+
+```py
+start = etime()
+
+# put the code you want to measure here
+
+end = etime()
+elapsed = end - start
+```
+
+或者，如果你使用 IPython，则可以使用`timeit`命令。 请参阅`ipython.scipy.org`。
+
+如果算法是二次的，我们期望运行时间`t`与输入大小`n`的函数，是这样的：
+
+```
+t = a * n^2 + b * n + c 
+```
+
+其中`a`，`b`和`c`是未知系数。 如果你对两边取对数，你会得到：
+
+```
+logt ~ loga + 2logn 
+```
+
+对于`n`的较大值，非主要项是微不足道的，并且这个近似值非常好。 所以如果我们在双对数刻度上绘制`t`对`n`，我们期待斜率为 2 的直线。
+
+类似地，如果算法是线性的，我们期望斜率为 1 的直线。
+
+我写了三个连接列表的函数：`sum_plus`使用`+=`；`sum_extend`使用`list.extend`；`sum_sum`使用`sum`。 我在`n`的范围内对它们计时，并将结果绘制在双对数刻度上。 下图展示了结果。
+
+![](img/a-2.png)
+
+图 a.2：运行时间和`n`，虚线斜率为 1
+
+![](img/a-3.png)
+
+图 a.3：运行时间和`n`，虚线斜率为 2
+
+在图 a.2 中，我用斜率为 1 的直线拟合了曲线。 这条线很好地拟合了数据，所以我们得出结论，这些实现是线性的。 `+=`实现的速度比较快，因为每次循环中，查找`extend`方法需要一些时间。
+
+在图 a.3 中，斜率 2 的线拟合了数据，所以`sum`实现是二次的。
+
+## A.6 `pyplot`
+
+为了制作本节中的图片，我使用了`pyplot`，它是`matplotlib`的一部分。 如果你的 Python 安装没有带着`matplotlib`，你可能需要安装它，或者你可以使用另一个库进行绘图。
+
+下面是一个简单的例子：
+
+```py
+
+import matplotlib.pyplot as pyplot
+
+pyplot.plot(xs, ys)
+scale = 'log'
+pyplot.xscale(scale)
+pyplot.yscale(scale)
+pyplot.title('')
+pyplot.xlabel('n')
+pyplot.ylabel('run time (s)')
+pyplot.show()
+```
+
+导入语句使`matplotlib.pyplot`可以使用较短的名称`pyplot`访问。
+
+`plot `接受`x`值列表和一个`y`值列表并绘制它们。 列表的长度必须相同。 `xscale`和`yscale`设置线性或对数轴。
+
+`title`，`xlabel`和`ylabel`是不言自明的。 最后，`show`在屏幕上显示该图。 你也可以使用`savefig`将绘图保存在文件中。
+
+`pyplot`的文档位于 <http://matplotlib.sourceforge.net/>。
+
+练习 6
+
+测试`LinearMap`，`BetterMap`和`HashMap`的性能；看看你能否描述它们的增长级别。
+
+你可以从`thinkcomplex.com/Map.py`下载我的映射实现，以及从`thinkcomplex.com/listsum.py`下载我在本节中使用的代码。
+
+你必须找到一个`n`的范围，它大到足以显示渐近行为，但小到足以快速运行。
